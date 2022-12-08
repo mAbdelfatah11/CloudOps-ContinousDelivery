@@ -7,9 +7,7 @@ use [AWS CodeBuild](https://aws.amazon.com/codebuild/) to do application build, 
 
 ## Running the example
 > You need to create the CodeCommit repository (steps below) before making the pipeline infrastructure. 
-> When creating the pipeline infrastructure, you can use the `singleClick_CD_pipeline.sh` script or else follow the "Walkthrough" section of the attached `Deployment_Guide.pdf` 
-
-![Deployment Guide](Deployment_Guide.pdf)
+> When creating the pipeline infrastructure, you can use the [singleClick_CD_pipeline.sh](singleClick_CD_pipeline.sh) script or else follow the "Walkthrough" section of the attached [Deployment_Guide.pdf](Deployment_Guide.pdf)
 
 
 #### Pre-requisites 
@@ -21,7 +19,7 @@ use [AWS CodeBuild](https://aws.amazon.com/codebuild/) to do application build, 
 
 #### 1. Create a sample application using Serverless Application Model (SAM). 
 
-We will create use sample application locally, then commit the code to CodeCommit in Development account. From there, CodePipeline will build the application code, store the output artifacts in S3Bucket, validate your deployment then approve the changes to be deployed to the Production or deployment Account, deployment should be using CloudFormation as the infrastructure as a code.  If you accept the review in CodePipeline, the application will be deployed to production using CloudFormation. 
+We will create sample application locally, then commit the code to CodeCommit in Development account. From there, CodePipeline will build the application code, store the output artifacts in S3Bucket, validate your deployment then approve the changes to be deployed to the Production or deployment Account, deployment should be using CloudFormation as the infrastructure as a code.  If you accept the review in CodePipeline, the application will be deployed to production using CloudFormation. 
 
 ##### Create the sample application locally
 
