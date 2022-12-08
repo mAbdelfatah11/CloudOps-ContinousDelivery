@@ -1,0 +1,47 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Live"
+  },
+  {
+      "ParameterKey": "RepositoryCodeCommit",
+      "ParameterValue": "WideBot.Analytics"
+  },
+  {
+      "ParameterKey": "Branch",
+      "ParameterValue": "master"
+  },
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "Analytics"
+  },
+  {
+    "ParameterKey": "S3Bucket",
+    "ParameterValue": "codepipeline-artifact-store-04"
+  },
+  {
+    "ParameterKey": "CMKARN",
+    "ParameterValue": "arn:aws:kms:us-east-1:042264081003:key/5e15f45e-7de5-4e1b-82cb-e9553b0c50ff"
+  },
+  {
+    "ParameterKey": "BeansTalkAppName",
+    "ParameterValue": "WB-Live-Analytics"
+  },
+  {
+    "ParameterKey": "BeansTalkEnvName",
+    "ParameterValue": "WB-Live-Analytics"
+  },
+  {
+    "ParameterKey": "CrossAccountCondition",
+    "ParameterValue": "false"    
+  },
+  {
+    "ParameterKey": "DevAccount",
+    "ParameterValue": "074697765782"
+  },
+  {
+    "ParameterKey": "DeploymentAccount",
+    "ParameterValue": "042264081003"
+  }
+]
+

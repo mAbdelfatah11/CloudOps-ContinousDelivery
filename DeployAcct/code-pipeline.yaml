@@ -1,0 +1,313 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CodePipeline for the Cross Account continuous Delivery
+Parameters:
+  Environment:
+    Description: Name of the Environment, Kindly Follow the standards [Ex.]- Live - Qc - Dev
+    Type: String
+  RepositoryCodeCommit:
+    Description: Name of the Codecommit Repo. - [Ex]- WideBot.Bot
+    Type: String
+  Branch:
+    Description: Name of the Repo. Branch - [Ex]- master
+    Type: String 
+  ProjectName:
+    Description: Name of the Build Project - [Ex]- Backend - Bot - Gateway - Analytics
+    Type: String
+  BuildSpecFile:
+    Description: Name of the Build Spec yaml file, the default name is the following one until you pass different name.
+    Type: String
+    Default: buildspec.yml
+  S3Bucket:
+    Description: S3 Bucket, which will hold the artifacts
+    Type: String
+  CMKARN:
+    Description: ARN of the KMS CMK creates in Tools account
+    Type: String
+  BeansTalkAppName:
+    Description: elastic beanstalk Application name [EX.] - WB-Live-Backend
+    Type: String
+  BeansTalkEnvName:
+    Description: elastic beanstalk Environment name [EX.] - WB-Live-Backend
+    Type: String
+  DevAccount:
+    Description: AWS AccountNumber for dev
+    Type: Number
+  CrossAccountCondition:
+    Description: Conditionally creates the resources for cross account access
+    Type: String
+    Default: false
+
+Conditions:
+  AddCodeBuildResource: !Equals [ !Ref CrossAccountCondition, true ]
+
+Resources:
+
+  BuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-${ProjectName}-CodeBuildRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+  BuildProjectPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: S3BucketPolicy
+    Properties:
+      PolicyName: !Sub "${Environment}-${ProjectName}-CodeBuildPolicy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetBucketPolicy
+              - s3:GetObject
+              - s3:ListBucket
+
+            Resource:
+             - !Join ['',['arn:aws:s3:::',!Ref S3Bucket, '/*']]
+             - !Join ['',['arn:aws:s3:::',!Ref S3Bucket]]
+          -
+            Effect: Allow
+            Action:
+              - kms:*
+            Resource: !Ref CMKARN
+          -
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+      Roles:
+        -
+          !Ref BuildProjectRole
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "WB-${Environment}-${ProjectName}"
+      Description: !Sub "WB-${Environment}-${ProjectName}"
+      EncryptionKey: !Ref CMKARN
+      ServiceRole: !GetAtt BuildProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+        Name: Bot
+      Environment:
+        Type: WINDOWS_SERVER_2019_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/windows-base:2019-1.0
+        EnvironmentVariables:
+          - Name: S3Bucket
+            Value: !Ref S3Bucket
+          - Name: KMSKey
+            Value: !Ref CMKARN
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Ref BuildSpecFile
+      LogsConfig:
+          CloudWatchLogs: 
+              Status: ENABLED
+          S3Logs: 
+              EncryptionDisabled: false
+              Status: DISABLED      
+      TimeoutInMinutes: 10
+      Tags:
+        - Key: Name
+          Value: !Ref ProjectName
+          
+  PipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "WB-${Environment}-${ProjectName}-codepipeline-role"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+  PipelinePolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: S3BucketPolicy
+    Properties:
+      PolicyName: !Sub "WB-${Environment}-${ProjectName}-codepipeline-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+            - codepipeline:*
+            - elasticbeanstalk:*
+            - cloudformation:*
+            - s3:*
+            - iam:ListRoles
+            - codecommit:List*
+            - codecommit:Get*
+            - codecommit:GitPull
+            - codecommit:UploadArchive
+            - codecommit:CancelUploadArchive
+            - codebuild:BatchGetBuilds
+            - codebuild:StartBuild
+            - iam:*
+            - codepipeline:*
+            - elasticbeanstalk:*
+            - cloudformation:*
+            - s3:*
+            - ec2:*
+            - elasticloadbalancing:*
+            - autoscaling:*
+            - codebuild:*
+            - cloudwatch:*
+            - sns:*
+            - iam:*
+            - sqs:*
+            - devicefarm:*
+            - states:DescribeExecution
+            - states:DescribeStateMachine
+            - states:StartExecution
+            - appconfig:StartDeployment
+            - appconfig:StopDeployment
+            - appconfig:GetDeployment
+            Resource:
+              - "*"
+          -
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource: !Ref CMKARN
+          -
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetBucketPolicy
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+             - !Join ['',['arn:aws:s3:::',!Ref S3Bucket, '/*']]
+             - !Join ['',['arn:aws:s3:::',!Ref S3Bucket]]
+          -
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - !Sub arn:aws:iam::${DevAccount}:role/DeploymentAcctCodePipelineCodeCommitRole
+              #- !Sub arn:aws:iam::${AWS::AccountId}:role/DeploymentAcctCodePipelineCloudFormationRole
+
+      Roles:
+        - !Ref PipeLineRole
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - s3:*
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${S3Bucket}
+              - !Sub arn:aws:s3:::${S3Bucket}/*
+            Principal:
+              AWS:
+                - !Sub arn:aws:iam::${DevAccount}:role/DeploymentAcctCodePipelineCodeCommitRole
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/DeploymentAcctCodePipelineCloudFormationRole
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/cloudformationdeployer-role
+                - !GetAtt [BuildProjectRole,Arn]              
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub WB-${Environment}-${ProjectName}
+      RoleArn: !GetAtt PipeLineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
+        EncryptionKey:
+          Id: !Ref CMKARN
+          Type: KMS
+      #NOte: pipeline stages names, must not have any spaces. Ex-DeployToProduction
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              Configuration:
+                RepositoryName: !Ref RepositoryCodeCommit
+                BranchName: !Ref Branch
+              OutputArtifacts:
+                - Name: SCCheckoutArtifact
+              RunOrder: 1
+              Region: us-east-1
+              
+              #RoleArn: !Sub arn:aws:iam::${DevAccount}:role/DeploymentAcctCodePipelineCodeCommitRole
+              #Wait till updating the KMS permissions with the codebuild role, the following condition will skip this source stage till 
+              #the condition is true which means that build role has been enabled in KMS, however we can mention the above role directly, 
+              #but we made the following condition just for consistency of pipeline running stages.
+             
+              RoleArn:
+                  Fn::If:
+                  - AddCodeBuildResource
+                  - !Sub arn:aws:iam::${DevAccount}:role/DeploymentAcctCodePipelineCodeCommitRole
+                  - !Ref AWS::NoValue
+        
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SCCheckoutArtifact
+              OutputArtifacts:
+                - Name: BuildOutput
+              Region: us-east-1
+
+        - Name: ApproveDeployProd
+          Actions:
+          -
+            Name: ApproveDeployProd
+            ActionTypeId:
+              Category: Approval
+              Owner: AWS
+              Version: 1
+              Provider: Manual
+            Configuration:
+              CustomData: "Log into the Deployment account and Review out your changes before approving."
+        - Name: DeployToProduction
+          Actions:
+            - Name: CreateChangeSetProd
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ElasticBeanstalk
+              RunOrder: 1
+              Configuration:
+                ApplicationName: !Ref BeansTalkAppName
+                EnvironmentName: !Ref BeansTalkEnvName
+              InputArtifacts:
+                - Name: BuildOutput   

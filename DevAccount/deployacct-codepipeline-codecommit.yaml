@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cross Account Role to Allow Access to CodePipeline in Deployment Account
+Parameters:
+  DeploymentAccount:
+    Description: AWS AccountNumber for tools account
+    Type: Number
+  CMKARN:
+    Description: ARN of the KMS CMK creates in Tools account
+    Type: String
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub DeploymentAcctCodePipelineCodeCommitRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Ref DeploymentAccount
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DeploymentAcctCodePipelineCodeCommitPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+            #codecommit full access for iam role to checkout the code
+              - codecommit:BatchGetRepositories
+              - codecommit:Get*
+              - codecommit:GitPull
+              - codecommit:List*
+              - codecommit:CancelUploadArchive
+              - codecommit:UploadArchive
+            #S3 full access for iam role to upload the checked out code to the s3 bucket
+              - s3:*
+            Resource: "*"
+          -
+            Effect: Allow
+            Action:
+            #kms full access to allow iam role for server side encryption of the checked out objects.
+              - kms:*
+            Resource: !Ref CMKARN
+      Roles:
+        -
+          !Ref Role
