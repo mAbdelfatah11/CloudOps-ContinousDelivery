@@ -1,9 +1,22 @@
-# Reference Architecture: Cross Account Continous Delivery CodePipeline
+# Reference Architecture: AWS Cross Account Continous Delivery Pipelines
 
+In this project, I will apply my acquired DevOps on AWS cloud and Scripting skills to automate the process of continuous delivery pipelines across two or more different AWS accounts
+
+![](Architecture_diagrams/CrossAccount_CD.png)
+
+## Why this Approach?
+1. To make my DevOps environment easier to manage and implement all required security measures, I need to isolate the development, test, and production environments from each other
+2. This isolation process allows for greater control over the cloud infrastructure and in many cases reduces its costs, this approach is not more than an example of applying that manner.
+3. I've implemented the approach to isolate the developer from any direct access to production workloads, as well as apply some accountability to those who have access to production workloads, also
+4. Using this approach, I can switch to any other AWS account at any time in the future and move my current deployed workloads exactly to the new account without downtime
+
+
+## Overview
+Managing resources in two different aws accounts is not that easy task, you need to apply your cloud adminstartion skills to get all services connected to each other
 This reference architecture demonstrates how to push code hosted in [AWS CodeCommit](https://aws.amazon.com/codecommit/) repository in Development Account,
 use [AWS CodeBuild](https://aws.amazon.com/codebuild/) to do application build, store the output artifacts in S3Bucket, validate your deployment then approve the changes to be deployed to the Production or deployment Account using [AWS CloudFormation](https://aws.amazon.com/cloudformation/). This orchestration of code movement from code checkin to deployment is securely handled by [AWS CodePipeline](https://aws.amazon.com/codepipeline/).
 
-![](Architecture_diagrams/CrossAccount_CD.png)
+
 
 ## Running the example
 > You need to create the CodeCommit repository (steps below) before making the pipeline infrastructure. 
