@@ -30,7 +30,7 @@ use [AWS CodeBuild](https://aws.amazon.com/codebuild/) to do application build, 
     * Deployment
     * Development
 
-#### 1. Create a sample application using Serverless Application Model (SAM). 
+#### 1. Create a sample application
 
 We will create sample application locally, then commit the code to CodeCommit in Development account. From there, CodePipeline will build the application code, store the output artifacts in S3Bucket, validate your deployment then approve the changes to be deployed to the Production or deployment Account, deployment should be using CloudFormation as the infrastructure as a code.  If you accept the review in CodePipeline, the application will be deployed to production using CloudFormation. 
 
