@@ -5,10 +5,10 @@ In this project, I will apply my acquired DevOps on AWS cloud and Scripting skil
 ![](Architecture_diagrams/CrossAccount_CD.png)
 
 ## Why this Approach?
-1. To make my DevOps environment easier to manage and implement all required security measures, I need to isolate the development, test, and production environments from each other
-2. This isolation process allows for greater control over the cloud infrastructure and in many cases reduces its costs, this approach is not more than an example of applying that manner.
-3. I've implemented the approach to isolate the developer from any direct access to production workloads, as well as apply some accountability to those who have access to production workloads, also
-4. Using this approach, I can switch to any other AWS account at any time in the future and move my current deployed workloads exactly to the new account without downtime
+1.  need to isolate the development, test, and production environments from each other.
+2. This isolation process allows for greater control over the cloud infrastructure and in many cases reduces its costs.
+3. prevent developers from any direct access to the production workloads.
+4. Using this approach, you can switch to any other AWS account at any time and move current deployed workloads exactly to the new account without downtime
 
 
 ## Overview
